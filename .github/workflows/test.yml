@@ -1,9 +1,8 @@
 name: test
 
 on:
-  push:
-    branches:
-    - master
+  # Pushes to master are tested by release-on-merge, which releases only on success.
+  workflow_call:
   pull_request:
 
 jobs:
