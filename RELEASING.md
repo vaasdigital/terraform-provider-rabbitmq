@@ -13,8 +13,8 @@ published automatically by `.github/workflows/release-on-merge.yml`:
 The release workflow builds the binaries with GoReleaser, signs the checksums
 with the GPG key in the `GPG_PRIVATE_KEY` / `PASSPHRASE` repository secrets, and
 creates a GitHub Release. The Terraform Registry picks the release up through its
-webhook and verifies the signature against the public key registered for the
-`vaasdigital` namespace.
+webhook and verifies the signature against the GPG public key registered on the
+`vaasdigital` public namespace in HCP Terraform.
 
 A release can also be made by hand by pushing a `v*` tag.
 
@@ -62,9 +62,10 @@ stays the same, so signatures on earlier releases remain valid.
    `GPG_PRIVATE_KEY` with the contents of `private-key.asc`. `PASSPHRASE` is
    unchanged.
 
-5. On [registry.terraform.io](https://registry.terraform.io), **User Settings →
-   Signing Keys**, remove the old key for the `vaasdigital` namespace and add the
-   contents of `public-key.asc`.
+5. In [HCP Terraform](https://app.terraform.io), open the organization's
+   **Settings → Public namespaces → vaasdigital → GPG keys**, remove the old key
+   and add the contents of `public-key.asc` with **New GPG Key**. This needs the
+   organization owner role or the *Manage public providers* permission.
 
 6. Store the updated `private-key.asc` in the password manager, then delete the
    exported files:
@@ -100,7 +101,7 @@ used again.
    `gpg --gen-revoke <FINGERPRINT>` and import the certificate.
 2. Generate a new key: `gpg --full-generate-key`, choosing **RSA and RSA**,
    4096 bits. The registry does not accept the default ECC type.
-3. Follow steps 3–7 above with the new key, adding it to the registry alongside
+3. Follow steps 3–7 above with the new key, adding it to the namespace alongside
    or instead of the old one.
 
 Releases signed with a revoked key should be considered untrusted; publish a new
