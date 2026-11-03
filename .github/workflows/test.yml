@@ -25,6 +25,16 @@ jobs:
         with:
           go-version: 1.24
 
+      # Without TF_ACC_TERRAFORM_PATH, the acceptance tests download Terraform with
+      # hc-install, which fails once its embedded HashiCorp signing key expires.
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Use the installed Terraform for acceptance tests
+        run: echo "TF_ACC_TERRAFORM_PATH=$(which terraform)" >> "$GITHUB_ENV"
+
       - name: test
         run: make test
 
