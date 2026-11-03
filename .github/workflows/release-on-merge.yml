@@ -1,0 +1,57 @@
+# Releases every merge to master whose commits warrant one, versioned from the
+# conventional commit types (see .github/scripts/next-version.sh).
+#
+# A tag pushed with GITHUB_TOKEN does not trigger other workflows, so the
+# release workflow is called directly instead of relying on its tag trigger.
+name: release-on-merge
+on:
+  push:
+    branches:
+      - master
+
+# Queue merges rather than racing them, so each run sees the previous run's tag.
+concurrency:
+  group: release-on-merge
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  tag:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.next.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Determine next version
+        id: next
+        run: echo "tag=$(.github/scripts/next-version.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: Push tag
+        if: steps.next.outputs.tag != ''
+        env:
+          TAG: ${{ steps.next.outputs.tag }}
+        run: |
+          git tag "$TAG" "$GITHUB_SHA"
+          git push origin "$TAG"
+
+  release:
+    needs: tag
+    if: needs.tag.outputs.tag != ''
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.tag.outputs.tag }}
+    secrets: inherit
+    permissions:
+      contents: write
